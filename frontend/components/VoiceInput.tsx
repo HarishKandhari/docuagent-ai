@@ -38,7 +38,8 @@ export default function VoiceInput({
       recognition.interimResults = false;
       recognition.lang = 'en-US';
 
-      recognition.onresult = (e) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      recognition.onresult = (e: any) => {
         const transcript = e.results[0][0].transcript;
         setText(transcript);
         setIsListening(false);
