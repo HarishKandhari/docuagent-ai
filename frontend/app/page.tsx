@@ -30,6 +30,10 @@ function cleanForSpeech(text: string): string {
   return text
     // Strip markdown decorators
     .replace(/[*_#`~>]/g, '')
+    // Currency shorthand: $140k → "140,000 dollars", $1.5m → "1.5 million dollars"
+    .replace(/\$([0-9,.]+)\s*b\b/gi, (_, n) => (parseFloat(n.replace(/,/g, '')) * 1_000_000_000).toLocaleString() + ' dollars')
+    .replace(/\$([0-9,.]+)\s*m\b/gi, (_, n) => (parseFloat(n.replace(/,/g, '')) * 1_000_000).toLocaleString() + ' dollars')
+    .replace(/\$([0-9,.]+)\s*k\b/gi, (_, n) => (parseFloat(n.replace(/,/g, '')) * 1_000).toLocaleString() + ' dollars')
     // Currency with cents: $4,845.38 → "4845 dollars and 38 cents"
     .replace(/\$([0-9,]+)\.(\d{2})/g, (_, whole, cents) =>
       whole.replace(/,/g, '') + ' dollars and ' + parseInt(cents, 10) + ' cents'
