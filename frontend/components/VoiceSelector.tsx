@@ -38,8 +38,6 @@ const GOOGLE_VOICES = [
   'Google UK English Male',
 ];
 
-// Other macOS system voices — below-average quality; shown in the System section.
-const APPLE_FALLBACK = ['Victoria', 'Karen', 'Daniel', 'Moira', 'Tessa'];
 
 // ─── Tier types ───────────────────────────────────────────────────────────────
 // 'natural' → Apple Enhanced/Standard or Microsoft Neural
