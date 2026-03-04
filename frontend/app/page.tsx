@@ -240,6 +240,14 @@ export default function Home() {
     handleQuestion('Give me a complete, detailed summary of this document.', false);
   }, [handleQuestion]);
 
+  const handleNewChat = useCallback(() => {
+    if (typeof window !== 'undefined') window.speechSynthesis?.cancel();
+    speechTextRef.current = '';
+    wordIndexRef.current = 0;
+    setMessages([]);
+    setError(null);
+  }, []);
+
   // ── Reset ─────────────────────────────────────────────────────────────────
 
   const handleReset = () => {
@@ -385,9 +393,11 @@ export default function Home() {
             {/* Action bar */}
             {hasReply && (
               <ActionBar
-                documentId={doc.document_id}
+                lastAnswer={lastAssistantMsg.current ?? ''}
+                extractedFields={doc.extracted_fields as Record<string, unknown>}
                 onReread={handleReread}
                 onSummarize={handleSummarize}
+                onNewChat={handleNewChat}
                 disabled={isStreaming}
               />
             )}
