@@ -63,6 +63,20 @@ function cleanForSpeech(text: string): string {
     // Strip markdown decorators
     .replace(/[*_#`~>]/g, '')
 
+    // ── Currency ranges (must come BEFORE individual patterns) ──────────────
+    // ₹12,000-25,000 / ₹12,000–₹25,000 → "12 thousand to 25 thousand rupees"
+    .replace(/(Rs\.?|₹|INR)\s*([0-9][0-9,.]*)\s*[-–—]\s*(?:Rs\.?|₹|INR)?\s*([0-9][0-9,.]*)/gi,
+      (_, __, a, b) => `${toIndianSpeech(parseNum(a))} to ${toIndianSpeech(parseNum(b))} rupees`)
+    // $100-200 / $1,000-$2,000 → "100 to 200 dollars"
+    .replace(/\$([0-9,.]+)\s*[-–—]\s*\$?([0-9,.]+)/g,
+      (_, a, b) => `${parseNum(a).toLocaleString()} to ${parseNum(b).toLocaleString()} dollars`)
+    // €100-200 → "100 to 200 euros"
+    .replace(/(€|EUR)\s*([0-9,.]+)\s*[-–—]\s*(?:€|EUR)?\s*([0-9,.]+)/gi,
+      (_, __, a, b) => `${parseNum(a).toLocaleString()} to ${parseNum(b).toLocaleString()} euros`)
+    // £100-200 → "100 to 200 pounds"
+    .replace(/(£|GBP)\s*([0-9,.]+)\s*[-–—]\s*(?:£|GBP)?\s*([0-9,.]+)/gi,
+      (_, __, a, b) => `${parseNum(a).toLocaleString()} to ${parseNum(b).toLocaleString()} pounds`)
+
     // ── Indian Rupee (Rs. / ₹ / INR) ────────────────────────────────────────
     // Rs. 1 crore / ₹1 crore
     .replace(/(Rs\.?|₹|INR)\s*([0-9][0-9,.]*)\s*crores?/gi,
