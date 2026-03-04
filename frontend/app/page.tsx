@@ -26,25 +26,89 @@ function uid() {
  *   1,234      →  "1234"  (commas stripped from numbers)
  *   42%        →  "42 percent"
  */
+// ─── Currency helpers ──────────────────────────────────────────────────────────
+
+/** Strip all commas from a numeric string and parse as float */
+function parseNum(s: string): number {
+  return parseFloat(s.replace(/,/g, ''));
+}
+
+/**
+ * Convert a plain integer to natural Indian speech.
+ * 4899840 → "48 lakh 99 thousand 840"
+ */
+function toIndianSpeech(n: number): string {
+  const int = Math.floor(Math.abs(n));
+  const parts: string[] = [];
+  let rem = int;
+
+  if (rem >= 10_000_000) {
+    parts.push(`${Math.floor(rem / 10_000_000)} crore`);
+    rem %= 10_000_000;
+  }
+  if (rem >= 100_000) {
+    parts.push(`${Math.floor(rem / 100_000)} lakh`);
+    rem %= 100_000;
+  }
+  if (rem >= 1_000) {
+    parts.push(`${Math.floor(rem / 1_000)} thousand`);
+    rem %= 1_000;
+  }
+  if (rem > 0) parts.push(`${rem}`);
+  return parts.length ? parts.join(' ') : '0';
+}
+
 function cleanForSpeech(text: string): string {
   return text
     // Strip markdown decorators
     .replace(/[*_#`~>]/g, '')
-    // Currency shorthand: $140k → "140,000 dollars", $1.5m → "1.5 million dollars"
-    .replace(/\$([0-9,.]+)\s*b\b/gi, (_, n) => (parseFloat(n.replace(/,/g, '')) * 1_000_000_000).toLocaleString() + ' dollars')
-    .replace(/\$([0-9,.]+)\s*m\b/gi, (_, n) => (parseFloat(n.replace(/,/g, '')) * 1_000_000).toLocaleString() + ' dollars')
-    .replace(/\$([0-9,.]+)\s*k\b/gi, (_, n) => (parseFloat(n.replace(/,/g, '')) * 1_000).toLocaleString() + ' dollars')
-    // Currency with cents: $4,845.38 → "4845 dollars and 38 cents"
+
+    // ── Indian Rupee (Rs. / ₹ / INR) ────────────────────────────────────────
+    // Rs. 1 crore / ₹1 crore
+    .replace(/(Rs\.?|₹|INR)\s*([0-9][0-9,.]*)\s*crores?/gi,
+      (_, __, n) => `${parseNum(n)} crore rupees`)
+    // Rs. 50 lakhs / ₹50 lakhs
+    .replace(/(Rs\.?|₹|INR)\s*([0-9][0-9,.]*)\s*lakhs?/gi,
+      (_, __, n) => `${parseNum(n)} lakh rupees`)
+    // Rs. 48,99,840 / ₹48,99,840 — Indian comma format → full spoken form
+    .replace(/(Rs\.?|₹|INR)\s*([0-9][0-9,.]*)/gi,
+      (_, __, n) => `${toIndianSpeech(parseNum(n))} rupees`)
+
+    // Standalone lakh / crore (no currency prefix)
+    .replace(/([0-9][0-9,.]*)\s*crores?/gi, (_, n) => `${parseNum(n)} crore`)
+    .replace(/([0-9][0-9,.]*)\s*lakhs?/gi,  (_, n) => `${parseNum(n)} lakh`)
+
+    // ── USD ($) ──────────────────────────────────────────────────────────────
+    .replace(/\$([0-9,.]+)\s*b\b/gi, (_, n) => (parseNum(n) * 1e9).toLocaleString() + ' dollars')
+    .replace(/\$([0-9,.]+)\s*m\b/gi, (_, n) => (parseNum(n) * 1e6).toLocaleString() + ' dollars')
+    .replace(/\$([0-9,.]+)\s*k\b/gi, (_, n) => (parseNum(n) * 1e3).toLocaleString() + ' dollars')
     .replace(/\$([0-9,]+)\.(\d{2})/g, (_, whole, cents) =>
-      whole.replace(/,/g, '') + ' dollars and ' + parseInt(cents, 10) + ' cents'
-    )
-    // Currency without cents: $4,845 → "4845 dollars"
-    .replace(/\$([0-9,]+)/g, (_, amount) =>
-      amount.replace(/,/g, '') + ' dollars'
-    )
-    // Remove thousands separators from remaining numbers: 1,234 → 1234
-    // Lookahead avoids consuming the next digit so multi-comma runs resolve in one pass
+      whole.replace(/,/g, '') + ' dollars and ' + parseInt(cents, 10) + ' cents')
+    .replace(/\$([0-9,]+)/g, (_, n) => n.replace(/,/g, '') + ' dollars')
+
+    // ── Euro (€ / EUR) ───────────────────────────────────────────────────────
+    .replace(/(€|EUR)\s*([0-9,.]+)\s*b\b/gi, (_, __, n) => (parseNum(n) * 1e9).toLocaleString() + ' euros')
+    .replace(/(€|EUR)\s*([0-9,.]+)\s*m\b/gi, (_, __, n) => (parseNum(n) * 1e6).toLocaleString() + ' euros')
+    .replace(/(€|EUR)\s*([0-9,.]+)\s*k\b/gi, (_, __, n) => (parseNum(n) * 1e3).toLocaleString() + ' euros')
+    .replace(/(€|EUR)\s*([0-9,.]+)/gi, (_, __, n) => parseNum(n).toLocaleString() + ' euros')
+
+    // ── British Pound (£ / GBP) ──────────────────────────────────────────────
+    .replace(/(£|GBP)\s*([0-9,.]+)\s*b\b/gi, (_, __, n) => (parseNum(n) * 1e9).toLocaleString() + ' pounds')
+    .replace(/(£|GBP)\s*([0-9,.]+)\s*m\b/gi, (_, __, n) => (parseNum(n) * 1e6).toLocaleString() + ' pounds')
+    .replace(/(£|GBP)\s*([0-9,.]+)\s*k\b/gi, (_, __, n) => (parseNum(n) * 1e3).toLocaleString() + ' pounds')
+    .replace(/(£|GBP)\s*([0-9,.]+)/gi, (_, __, n) => parseNum(n).toLocaleString() + ' pounds')
+
+    // ── Japanese Yen (¥ / JPY) ───────────────────────────────────────────────
+    .replace(/(¥|JPY)\s*([0-9,.]+)/gi, (_, __, n) => parseNum(n).toLocaleString() + ' yen')
+
+    // ── Middle East ──────────────────────────────────────────────────────────
+    .replace(/AED\s*([0-9,.]+)/gi, (_, n) => parseNum(n).toLocaleString() + ' dirhams')
+    .replace(/SAR\s*([0-9,.]+)/gi, (_, n) => parseNum(n).toLocaleString() + ' riyals')
+
+    // ── Strip remaining number commas: 1,234 → 1234 ──────────────────────────
     .replace(/(\d),(?=\d)/g, '$1')
+
+    // ── Misc ─────────────────────────────────────────────────────────────────
     .replace(/(\d+(?:\.\d+)?)%/g, '$1 percent')
     .replace(/\bvs\.?\b/gi, 'versus')
     .replace(/&/g, 'and')
