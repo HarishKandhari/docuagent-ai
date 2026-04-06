@@ -69,7 +69,7 @@ async def get_doc_context(document_id: str) -> dict[str, Any] | None:
 
 @app.get("/health", response_model=HealthResponse)
 async def health():
-    """Quick liveness check."""
+    """Quick liveness check — also used as keep-alive ping."""
     return HealthResponse(
         status="ok",
         services={
@@ -77,6 +77,11 @@ async def health():
             "supabase": "connected" if db.get_client() else "unconfigured",
         },
     )
+
+@app.get("/ping")
+async def ping():
+    """Lightweight keep-alive endpoint — no DB or AI calls."""
+    return {"pong": True}
 
 
 # ─── Document library ─────────────────────────────────────────────────────────

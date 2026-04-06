@@ -12,7 +12,8 @@ import anthropic
 # Load .env from the same directory as this file — works regardless of CWD
 load_dotenv(Path(__file__).parent / ".env")
 
-MODEL = "claude-sonnet-4-5"
+CLASSIFY_MODEL = "claude-sonnet-4-5"       # Sonnet for accuracy on classification
+QUERY_MODEL   = "claude-haiku-4-5"  # Haiku for fast conversational Q&A
 
 _anthropic: Optional[anthropic.AsyncAnthropic] = None
 
@@ -109,7 +110,7 @@ async def classify_document(
         ]
 
     message = await client.messages.create(
-        model=MODEL,
+        model=CLASSIFY_MODEL,
         max_tokens=2048,
         system=CLASSIFY_SYSTEM,
         messages=[{"role": "user", "content": content}],
@@ -185,7 +186,7 @@ async def stream_query(
     messages.append({"role": "user", "content": question})
 
     async with client.messages.stream(
-        model=MODEL,
+        model=QUERY_MODEL,
         max_tokens=300,
         system=system_prompt,
         messages=messages,
