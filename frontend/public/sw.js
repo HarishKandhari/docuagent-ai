@@ -1,4 +1,4 @@
-const CACHE = 'docuagent-v1';
+const CACHE = 'docuagent-v3';
 const PRECACHE = ['/', '/manifest.json'];
 
 self.addEventListener('install', (e) => {
@@ -22,22 +22,23 @@ self.addEventListener('activate', (e) => {
 self.addEventListener('fetch', (e) => {
   const url = e.request.url;
 
-  // Always use network for API calls and external services
+  // Always use network for API calls, JS chunks, and external services
   if (
     e.request.method !== 'GET' ||
-    url.includes('railway.app') ||
+    url.includes('.railway.app') ||
+    url.includes('.onrender.com') ||
     url.includes('supabase.co') ||
-    url.includes('localhost:8000') ||
+    url.includes('localhost') ||
+    url.includes('_next/static') ||
     url.includes('/api/')
   ) {
     return;
   }
 
-  // Cache-first for everything else (static assets, pages)
+  // Cache-first for everything else (pages, manifest, icons)
   e.respondWith(
     caches.match(e.request).then(
       (cached) => cached || fetch(e.request).then((res) => {
-        // Cache successful responses for next time
         if (res.ok) {
           const clone = res.clone();
           caches.open(CACHE).then((c) => c.put(e.request, clone));
