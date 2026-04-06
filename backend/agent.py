@@ -111,7 +111,7 @@ async def classify_document(
 
     message = await client.messages.create(
         model=CLASSIFY_MODEL,
-        max_tokens=2048,
+        max_tokens=4096,
         system=CLASSIFY_SYSTEM,
         messages=[{"role": "user", "content": content}],
     )
