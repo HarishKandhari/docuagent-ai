@@ -187,15 +187,17 @@ async def query_stream(request: QueryRequest):
     Falls back to Supabase if the document was lost from memory (e.g. after reload).
     Injects conversation history so Claude can reference earlier Q&A in this session.
     """
-    doc = await get_doc_context(request.document_id)
+    # Run both DB lookups in parallel to cut latency
+    doc, history = await asyncio.gather(
+        get_doc_context(request.document_id),
+        db.get_conversation_history(request.document_id),
+    )
+
     if doc is None:
         raise HTTPException(
             status_code=404,
             detail="Document not found. Please re-upload the file.",
         )
-
-    # Fetch last 6 Q&A turns — gives Claude memory of this conversation
-    history = await db.get_conversation_history(request.document_id)
 
     # Collect full answer for logging (runs alongside streaming)
     answer_parts: list[str] = []
