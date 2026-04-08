@@ -9,6 +9,7 @@ import VoiceInput from '@/components/VoiceInput';
 import ActionBar from '@/components/ActionBar';
 import VoiceSelector from '@/components/VoiceSelector';
 import RecentDocuments from '@/components/RecentDocuments';
+import ClassifyingScreen from '@/components/ClassifyingScreen';
 import { classifyDocument, streamQuery } from '@/lib/api';
 import type { AppPhase, ChatMessage, ClassifyResponse, DocumentListItem } from '@/lib/types';
 
@@ -359,30 +360,7 @@ export default function Home() {
   }
 
   if (phase === 'processing') {
-    return (
-      <div className="min-h-screen bg-[#020817] flex flex-col items-center justify-center gap-6">
-        <div className="relative w-24 h-24">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-blue-500
-            opacity-70 blur-sm animate-spin" style={{ animationDuration: '3s' }} />
-          <div className="absolute inset-2 rounded-full bg-[#020817] flex items-center justify-center">
-            <svg className="w-8 h-8 text-indigo-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          </div>
-        </div>
-        <div className="text-center">
-          <p className="text-white font-medium text-lg">Reading your document…</p>
-          <p className="text-slate-500 text-sm mt-1">Classifying · Extracting · Analysing</p>
-        </div>
-        <div className="flex gap-1.5">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce"
-              style={{ animationDelay: `${i * 0.15}s` }} />
-          ))}
-        </div>
-      </div>
-    );
+    return <ClassifyingScreen />;
   }
 
   // ── Ready ─────────────────────────────────────────────────────────────────

@@ -12,8 +12,8 @@ import anthropic
 # Load .env from the same directory as this file — works regardless of CWD
 load_dotenv(Path(__file__).parent / ".env")
 
-CLASSIFY_MODEL = "claude-sonnet-4-5"       # Sonnet for accuracy on classification
-QUERY_MODEL   = "claude-haiku-4-5"  # Haiku for fast conversational Q&A
+CLASSIFY_MODEL = "claude-haiku-4-5"   # Haiku for fast classification
+QUERY_MODEL   = "claude-haiku-4-5"   # Haiku for fast conversational Q&A
 
 _anthropic: Optional[anthropic.AsyncAnthropic] = None
 
