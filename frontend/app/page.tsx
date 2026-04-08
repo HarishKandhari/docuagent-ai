@@ -389,6 +389,7 @@ export default function Home() {
   if (!doc) return null;
   const theme = doc.theme_color;
   const hasReply = messages.some((m) => m.role === 'assistant' && m.content);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <div className="min-h-screen bg-[#020817] flex flex-col">
@@ -413,6 +414,18 @@ export default function Home() {
               {doc.category}
             </span>
             <span className="text-white font-medium text-sm truncate">{doc.document_type}</span>
+            {/* Sidebar toggle */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              title={sidebarOpen ? 'Hide fields' : 'Show fields'}
+              className="flex-shrink-0 w-8 h-8 rounded-lg bg-slate-800 border border-slate-700
+                flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d={sidebarOpen ? 'M11 19l-7-7 7-7M21 12H4' : 'M13 5l7 7-7 7M3 12h18'} />
+              </svg>
+            </button>
           </div>
 
           <div className="flex items-center gap-2 flex-shrink-0">
@@ -437,12 +450,14 @@ export default function Home() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-4">
         <div className="flex flex-col lg:flex-row gap-4" style={{ minHeight: 'calc(100vh - 120px)' }}>
 
-          {/* Left: fields */}
-          <aside className="lg:w-72 xl:w-80 flex-shrink-0">
-            <div className="lg:sticky lg:top-20 max-h-[calc(100vh-96px)] overflow-y-auto custom-scrollbar rounded-xl">
-              <DocumentCard doc={doc} />
-            </div>
-          </aside>
+          {/* Left: fields — collapsible */}
+          {sidebarOpen && (
+            <aside className="lg:w-72 xl:w-80 flex-shrink-0">
+              <div className="lg:sticky lg:top-20 max-h-[calc(100vh-96px)] overflow-y-auto custom-scrollbar rounded-xl">
+                <DocumentCard doc={doc} />
+              </div>
+            </aside>
+          )}
 
           {/* Right: chat */}
           <div className="flex-1 flex flex-col gap-3 min-h-0">
