@@ -438,8 +438,8 @@ export default function Home() {
         <div className="flex flex-col lg:flex-row gap-4" style={{ minHeight: 'calc(100vh - 120px)' }}>
 
           {/* Left: fields */}
-          <aside className="lg:w-80 xl:w-96 flex-shrink-0">
-            <div className="lg:sticky lg:top-20 max-h-[calc(100vh-96px)] overflow-hidden">
+          <aside className="lg:w-72 xl:w-80 flex-shrink-0">
+            <div className="lg:sticky lg:top-20 max-h-[calc(100vh-96px)] overflow-y-auto custom-scrollbar rounded-xl">
               <DocumentCard doc={doc} />
             </div>
           </aside>
