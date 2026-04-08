@@ -112,12 +112,14 @@ async def classify_document(
 ) -> dict[str, Any]:
     """
     Send file to Claude for classification + field extraction in one call.
-    Returns the parsed JSON response dict.
+    Returns the parsed JSON response dict, including 'full_text' for text-based files.
     """
     client = get_anthropic()
 
     # Claude vision only accepts these four image types
     VISION_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+
+    full_text: str = ""  # will hold extracted text for non-image/pdf files
 
     # Build the message content
     if media_type in VISION_TYPES:
@@ -155,11 +157,11 @@ async def classify_document(
     else:
         # Extract readable text based on file type
         raw_bytes = base64.b64decode(file_b64)
-        text_content = _extract_text(filename, raw_bytes)
+        full_text = _extract_text(filename, raw_bytes)
         content = [
             {
                 "type": "text",
-                "text": f"Filename: {filename}\n\nDocument content:\n{text_content[:12000]}\n\nAnalyze this document and return the JSON as instructed.",
+                "text": f"Filename: {filename}\n\nDocument content:\n{full_text[:12000]}\n\nAnalyze this document and return the JSON as instructed.",
             }
         ]
 
@@ -180,6 +182,11 @@ async def classify_document(
         raw = raw.strip()
 
     result = json.loads(raw)
+
+    # Attach full text so it can be stored and used during Q&A
+    if full_text:
+        result["full_text"] = full_text[:20000]  # cap at 20k chars
+
     return result
 
 
@@ -190,9 +197,9 @@ QUERY_SYSTEM_TEMPLATE = """You've read this document thoroughly:
 Type: {document_type} | Category: {category}
 Summary: {summary}
 
-Data:
+Extracted Fields:
 {extracted_fields}
-
+{full_text_section}
 You are a knowledgeable friend having a real conversation — not an AI giving a presentation. \
 Think of how a doctor friend explains something at dinner, not how a medical textbook reads.
 
@@ -222,16 +229,24 @@ async def stream_query(
     category = document_context.get("category", "General")
     summary = document_context.get("summary", "")
     extracted = document_context.get("extracted_fields", {})
+    full_text = document_context.get("full_text", "")
 
     extracted_str = "\n".join(
         f"  {k}: {v}" for k, v in extracted.items()
     ) if extracted else "  (no fields extracted)"
+
+    # Include full document text for text-based files (docx, xlsx, csv, txt, etc.)
+    full_text_section = (
+        f"\nFull Document Text:\n{full_text[:15000]}\n"
+        if full_text else ""
+    )
 
     system_prompt = QUERY_SYSTEM_TEMPLATE.format(
         document_type=doc_type,
         category=category,
         summary=summary,
         extracted_fields=extracted_str,
+        full_text_section=full_text_section,
     )
 
     messages = []

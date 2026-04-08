@@ -141,14 +141,14 @@ async def classify(file: UploadFile = File(...)):
             detail=f"Claude response missing keys: {missing}",
         )
 
-    # Cache in memory
+    # Cache in memory (full_text included for Q&A — not sent to frontend)
     _document_store[document_id] = {
         **classification,
         "filename": filename,
         "file_url": file_url,
     }
 
-    # ── Fire-and-forget: log to Supabase (includes summary + theme_color) ────
+    # ── Fire-and-forget: log to Supabase (includes summary + theme_color + full_text) ──
     asyncio.create_task(
         db.log_document(
             document_id=document_id,
@@ -161,6 +161,7 @@ async def classify(file: UploadFile = File(...)):
             suggested_questions=classification["suggested_questions"],
             summary=classification["summary"],
             theme_color=classification["theme_color"],
+            full_text=classification.get("full_text", ""),
         )
     )
 

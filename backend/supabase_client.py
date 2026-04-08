@@ -46,10 +46,11 @@ async def log_document(
     suggested_questions: list[str],
     summary: str = "",
     theme_color: str = "#6366f1",
+    full_text: str = "",
 ) -> None:
     """Fire-and-forget insert into the documents table.
 
-    summary and theme_color are stored inside extracted_fields under __meta
+    summary, theme_color, and full_text are stored inside extracted_fields under __meta
     so we can reconstruct the full context without schema changes.
     """
     client = get_client()
@@ -59,7 +60,7 @@ async def log_document(
     # Embed meta into extracted_fields JSONB — no schema change needed
     fields_with_meta = {
         **extracted_fields,
-        "__meta": {"summary": summary, "theme_color": theme_color},
+        "__meta": {"summary": summary, "theme_color": theme_color, "full_text": full_text},
     }
 
     def _insert():
@@ -121,6 +122,7 @@ async def get_document(document_id: str) -> Optional[dict[str, Any]]:
         "theme_color": meta.get("theme_color", "#6366f1"),
         "extracted_fields": fields,
         "suggested_questions": row.get("suggested_questions") or [],
+        "full_text": meta.get("full_text", ""),
     }
 
 
