@@ -2,6 +2,7 @@
 Claude AI integration — document classification + streaming query.
 """
 import os
+import io
 import json
 import base64
 from pathlib import Path
@@ -13,6 +14,61 @@ import anthropic
 load_dotenv(Path(__file__).parent / ".env")
 
 CLASSIFY_MODEL = "claude-haiku-4-5"   # Haiku for fast classification
+
+
+def _extract_text(filename: str, raw_bytes: bytes) -> str:
+    """Extract readable text from various file formats."""
+    ext = Path(filename).suffix.lower()
+
+    # Word (.docx)
+    if ext == ".docx":
+        try:
+            from docx import Document
+            doc = Document(io.BytesIO(raw_bytes))
+            paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
+            # Also grab table content
+            for table in doc.tables:
+                for row in table.rows:
+                    row_text = " | ".join(c.text.strip() for c in row.cells if c.text.strip())
+                    if row_text:
+                        paragraphs.append(row_text)
+            return "\n".join(paragraphs) or "(empty document)"
+        except Exception as e:
+            return f"(Could not read Word file: {e})"
+
+    # Excel (.xlsx)
+    if ext in (".xlsx", ".xls"):
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(io.BytesIO(raw_bytes), read_only=True, data_only=True)
+            lines = []
+            for sheet in wb.worksheets:
+                lines.append(f"Sheet: {sheet.title}")
+                for row in sheet.iter_rows(values_only=True):
+                    row_text = " | ".join(str(c) for c in row if c is not None)
+                    if row_text.strip():
+                        lines.append(row_text)
+            return "\n".join(lines) or "(empty spreadsheet)"
+        except Exception as e:
+            return f"(Could not read Excel file: {e})"
+
+    # CSV / plain text
+    if ext in (".csv", ".txt", ".md", ".json", ".xml", ".html"):
+        try:
+            return raw_bytes.decode("utf-8", errors="replace")
+        except Exception:
+            return "(Could not decode file)"
+
+    # Fallback — try plain text decode
+    try:
+        decoded = raw_bytes.decode("utf-8", errors="replace")
+        # If it looks like binary garbage, say so
+        printable = sum(1 for c in decoded if c.isprintable() or c in "\n\r\t")
+        if printable / max(len(decoded), 1) < 0.7:
+            return f"(Binary file — classify by filename: {filename})"
+        return decoded
+    except Exception:
+        return f"(Binary file — classify by filename: {filename})"
 QUERY_MODEL   = "claude-haiku-4-5"   # Haiku for fast conversational Q&A
 
 _anthropic: Optional[anthropic.AsyncAnthropic] = None
@@ -97,15 +153,13 @@ async def classify_document(
             },
         ]
     else:
-        # Text / CSV / Word / unknown — decode bytes and send as text
-        try:
-            text_content = base64.b64decode(file_b64).decode("utf-8", errors="replace")
-        except Exception:
-            text_content = "(binary content — classify by filename only)"
+        # Extract readable text based on file type
+        raw_bytes = base64.b64decode(file_b64)
+        text_content = _extract_text(filename, raw_bytes)
         content = [
             {
                 "type": "text",
-                "text": f"Filename: {filename}\n\nDocument content:\n{text_content[:8000]}\n\nAnalyze this document and return the JSON as instructed.",
+                "text": f"Filename: {filename}\n\nDocument content:\n{text_content[:12000]}\n\nAnalyze this document and return the JSON as instructed.",
             }
         ]
 
