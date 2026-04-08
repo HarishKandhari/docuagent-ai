@@ -142,6 +142,7 @@ export default function Home() {
   const [voiceMuted, setVoiceMuted] = useState(false);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const lastAssistantMsg = useRef<string>('');
 
@@ -389,7 +390,6 @@ export default function Home() {
   if (!doc) return null;
   const theme = doc.theme_color;
   const hasReply = messages.some((m) => m.role === 'assistant' && m.content);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <div className="min-h-screen bg-[#020817] flex flex-col">
