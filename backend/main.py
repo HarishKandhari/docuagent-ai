@@ -148,21 +148,20 @@ async def classify(file: UploadFile = File(...)):
         "file_url": file_url,
     }
 
-    # ── Fire-and-forget: log to Supabase (includes summary + theme_color + full_text) ──
-    asyncio.create_task(
-        db.log_document(
-            document_id=document_id,
-            filename=filename,
-            file_url=file_url,
-            category=classification["category"],
-            document_type=classification["document_type"],
-            confidence=classification["confidence"],
-            extracted_fields=classification["extracted_fields"],
-            suggested_questions=classification["suggested_questions"],
-            summary=classification["summary"],
-            theme_color=classification["theme_color"],
-            full_text=classification.get("full_text", ""),
-        )
+    # ── Await Supabase log — ensures document survives server restarts ────────
+    # (Small latency hit, but critical for Q&A reliability on Render free tier)
+    await db.log_document(
+        document_id=document_id,
+        filename=filename,
+        file_url=file_url,
+        category=classification["category"],
+        document_type=classification["document_type"],
+        confidence=classification["confidence"],
+        extracted_fields=classification["extracted_fields"],
+        suggested_questions=classification["suggested_questions"],
+        summary=classification["summary"],
+        theme_color=classification["theme_color"],
+        full_text=classification.get("full_text", ""),
     )
 
     return ClassifyResponse(

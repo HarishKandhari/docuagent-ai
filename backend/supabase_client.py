@@ -79,7 +79,7 @@ async def log_document(
             print(f"[Supabase] log_document error: {e}")
 
     loop = asyncio.get_event_loop()
-    loop.run_in_executor(None, _insert)
+    await loop.run_in_executor(None, _insert)  # awaited — ensures doc is in DB before returning
 
 
 async def get_document(document_id: str) -> Optional[dict[str, Any]]:
